@@ -59,17 +59,14 @@ jobs:
       - name: Trigger deploy via SSM
         run: |
           AWS_REGION="eu-west-2"
-          INSTANCE_TAG_KEY="Role"
-          INSTANCE_TAG_VALUE="blog-ec2"
 
           INSTANCE_ID=$(aws ec2 describe-instances \
             --region "$AWS_REGION" \
-            --filters "Name=tag:$INSTANCE_TAG_KEY,Values=$INSTANCE_TAG_VALUE" "Name=instance-state-name,Values=running" \
             --query "Reservations[0].Instances[0].InstanceId" \
             --output text)
 
           if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
-            echo "No running instance with tag $INSTANCE_TAG_KEY=$INSTANCE_TAG_VALUE" >&2
+            echo "No known running instance" >&2
             exit 1
           fi
 
