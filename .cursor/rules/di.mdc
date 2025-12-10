@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+You MUST use dependency injection in routers and service functions as well as in other functions according to the relevant coding best practices and standards.

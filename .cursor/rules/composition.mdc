@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+When building this project I will be assembling each part separately. This means that your objective is to make the app run without errors after every code addition. Your goal is to create each element of the whole app in such a way that it adheres to all best practices and coding standards assuming that the other parts are there.

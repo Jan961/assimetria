@@ -5,7 +5,7 @@ import createArticleRouter from './routes/articles.routes';
 import { createArticleController } from './controllers/articles.controller';
 import { ArticleService } from './services/articles.service';
 import { ArticleRepository } from './repositories/article.repository';
-import { notFoundHandler, errorHandler } from './middleware/error.middleware';
+import { notFoundHandler, errorHandler } from './middleware/error';
 
 const app: Application = express();
 
