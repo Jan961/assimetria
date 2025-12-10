@@ -1,0 +1,97 @@
+---
+alwaysApply: true
+---
+# Express.js Architecture & DI Spec for LLM Agent
+
+This document describes how to implement an Express.js backend with:
+
+- Thin **route** files
+- **Controllers** for HTTP logic
+- **Services** for business logic
+- **Repositories** for data access
+- Manual **dependency injection** (DI)
+- Centralized **error handling** and **validation**
+
+The goal is to keep code testable, decoupled, and aligned with common Node/Express best practices.
+
+---
+
+## Core Principles
+
+- Use **Express** with clearly separated layers:
+  - Routes → HTTP paths & middleware wiring only
+  - Controllers → HTTP behavior (status codes, params, body, response)
+  - Services → Business logic
+  - Repositories → DB / external APIs / persistence
+- **No business logic in routes.**
+- Use **manual DI**:
+  - Do **not** instantiate services or controllers inside route files.
+  - All construction happens in the composition root (`app.js` / `server.js`).
+- Centralize **error handling** and **validation** via middleware.
+
+---
+
+## Folder / File Structure
+
+Use a structure similar to this:
+
+- `src/app.js` – Express app, dependency wiring (composition root).
+- `src/routes/*.routes.js` – One file per resource (e.g. `user.routes.js`).
+- `src/controllers/*.controller.js` – One controller per resource.
+- `src/services/*.service.js` – Business logic per domain/service.
+- `src/repositories/*.repository.js` – Data access per domain.
+- `src/middleware/asyncHandler.js` – Async error wrapper middleware.
+- `src/middleware/validateBody.js` – Request body validation middleware.
+- `src/validation/*.js` – Validation schemas (Joi, Zod, etc.).
+
+Names can vary slightly but responsibilities must be separated as above.
+
+---
+
+## Route Files
+
+**Example:** `src/routes/user.routes.js`
+
+### Requirements
+
+- Export a **factory function** that accepts dependencies:
+
+  ```js
+  // src/routes/user.routes.js
+  import { Router } from 'express';
+  import { asyncHandler } from '../middleware/asyncHandler.js';
+  import { validateBody } from '../middleware/validateBody.js';
+  import {
+    createUserSchema,
+    updateUserSchema,
+  } from '../validation/userSchemas.js';
+
+  /**
+   * @param {object} deps
+   * @param {object} deps.userController
+   */
+  export function createUserRouter({ userController }) {
+    const router = Router();
+
+    router.get('/', asyncHandler(userController.list));
+
+    router.get('/:id', asyncHandler(userController.getById));
+
+    router.post(
+      '/',
+      validateBody(createUserSchema),
+      asyncHandler(userController.create),
+    );
+
+    router.patch(
+      '/:id',
+      validateBody(updateUserSchema),
+      asyncHandler(userController.update),
+    );
+
+    router.delete('/:id', asyncHandler(userController.remove));
+
+    return router;
+  }
+
+  export default createUserRouter;
