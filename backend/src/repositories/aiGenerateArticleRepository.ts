@@ -31,21 +31,21 @@ export interface HttpClient {
 }
 
 interface Dependencies {
-  aiApiClient?: OpenAI;
-  config?: AiArticleProviderConfig;
+  aiApiClient: OpenAI;
+  config: AiArticleProviderConfig;
 }
 
 interface ProviderArticleResponse {
   title: string;
   content: string;
-  photoUrl?: string | null;
+  photoUrl: string | null;
 }
 
 export class AiGenerateArticleRepository {
-  private readonly aiApiClient?: OpenAI;
-  private readonly config?: AiArticleProviderConfig;
+  private readonly aiApiClient: OpenAI;
+  private readonly config: AiArticleProviderConfig;
 
-  constructor({ aiApiClient, config }: Dependencies = {}) {
+  constructor({ aiApiClient, config }: Dependencies) {
     this.aiApiClient = aiApiClient;
     this.config = config;
   }
@@ -63,7 +63,7 @@ export class AiGenerateArticleRepository {
   private async fetchArticleFromProvider(
     params: GenerateArticleParams,
   ): Promise<ProviderArticleResponse> {
-    if (this.aiApiClient && this.config?.endpoint) {
+    if (this.aiApiClient && this.config.endpoint) {
       const response = await this.aiApiClient.chat.completions.create({
         model: params.model,
         messages: params.messages,
@@ -75,6 +75,6 @@ export class AiGenerateArticleRepository {
         photoUrl: null,
       };
     }
-    throw new Error('AI API client or configuration is required');
+    throw new Error('AI API client and configuration are required');
   }
 }
