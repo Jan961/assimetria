@@ -2,16 +2,20 @@ import { QueryResult, QueryResultRow } from 'pg';
 
 import { runQuery } from '../db';
 import {
-  ArticleRecord,
+  Article,
   ArticleSortDirection,
   CreateArticleInput,
   UpdateArticleInput,
+  ListArticlesParams,
+  GetArticlesByDatesParams,
 } from '../models/article';
 
 type QueryRunner = <T extends QueryResultRow = QueryResultRow>(
   queryText: string,
   params?: ReadonlyArray<unknown>,
 ) => Promise<QueryResult<T>>;
+
+
 
 interface ArticleRow extends QueryResultRow {
   id: number;
@@ -22,14 +26,10 @@ interface ArticleRow extends QueryResultRow {
   updated_at: Date | string;
 }
 
-export interface ListArticlesParams {
-  page?: number;
-  pageSize?: number;
-  sortDirection?: ArticleSortDirection;
-}
+
 
 export interface PaginatedArticlesResult {
-  data: ArticleRecord[];
+  data: Article[];
   pagination: {
     page: number;
     pageSize: number;
@@ -49,7 +49,7 @@ export class ArticleRepository {
     this.queryRunner = dependencies?.queryRunner ?? runQuery;
   }
 
-  async createArticle(input: CreateArticleInput): Promise<ArticleRecord> {
+  async createArticle(input: CreateArticleInput): Promise<Article> {
     const result = await this.queryRunner<ArticleRow>(
       `
         INSERT INTO articles (title, content, photo_url)
@@ -99,7 +99,62 @@ export class ArticleRepository {
     };
   }
 
-  async getArticleById(id: number): Promise<ArticleRecord | null> {
+  async listArticlesByDateRange(
+    params: GetArticlesByDatesParams,
+  ): Promise<PaginatedArticlesResult> {
+    if (!params) {
+      throw new Error('Date range parameters are required');
+    }
+
+    const fromDate = this.ensureValidDate(params.from, 'from');
+    const toDate = this.ensureValidDate(params.to, 'to');
+
+    if (fromDate > toDate) {
+      throw new Error('"from" date must be earlier than or equal to "to" date');
+    }
+
+    const page = this.normalizePage(params.page);
+    const pageSize = this.normalizePageSize(params.pageSize);
+    const sortDirection = this.normalizeSortDirection(params.sortDirection);
+    const offset = (page - 1) * pageSize;
+
+    const [itemsResult, totalResult] = await Promise.all([
+      this.queryRunner<ArticleRow>(
+        `
+          SELECT id, title, content, photo_url, created_at, updated_at
+          FROM articles
+          WHERE created_at >= $3 AND created_at <= $4
+          ORDER BY created_at ${sortDirection}
+          LIMIT $1 OFFSET $2;
+        `,
+        [pageSize, offset, fromDate, toDate],
+      ),
+      this.queryRunner<{ count: string }>(
+        `
+          SELECT COUNT(*)::text AS count
+          FROM articles
+          WHERE created_at >= $1 AND created_at <= $2;
+        `,
+        [fromDate, toDate],
+      ),
+    ]);
+
+    const totalItems = Number.parseInt(totalResult.rows[0]?.count ?? '0', 10);
+    const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / pageSize);
+
+    return {
+      data: itemsResult.rows.map((row) => this.mapRow(row)),
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages,
+        hasNextPage: page < totalPages,
+      },
+    };
+  }
+
+  async getArticleById(id: number): Promise<Article | null> {
     const result = await this.queryRunner<ArticleRow>(
       `
         SELECT id, title, content, photo_url, created_at, updated_at
@@ -116,7 +171,7 @@ export class ArticleRepository {
     return this.mapRow(result.rows[0]);
   }
 
-  async updateArticle(id: number, changes: UpdateArticleInput): Promise<ArticleRecord | null> {
+  async updateArticle(id: number, changes: UpdateArticleInput): Promise<Article | null> {
     const { assignments, values } = this.buildUpdateStatement(changes);
 
     if (assignments.length === 0) {
@@ -211,7 +266,19 @@ export class ArticleRepository {
     return direction.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
   }
 
-  private mapRow(row: ArticleRow): ArticleRecord {
+  private ensureValidDate(value: Date, fieldName: 'from' | 'to'): Date {
+    if (!(value instanceof Date)) {
+      throw new Error(`"${fieldName}" must be a Date instance`);
+    }
+
+    if (Number.isNaN(value.getTime())) {
+      throw new Error(`"${fieldName}" must be a valid date`);
+    }
+
+    return value;
+  }
+
+  private mapRow(row: ArticleRow): Article {
     return {
       id: row.id,
       title: row.title,

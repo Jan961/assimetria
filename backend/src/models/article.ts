@@ -1,6 +1,6 @@
 export type ArticleSortDirection = 'asc' | 'desc';
 
-export interface ArticleRecord {
+export interface Article {
   id: number;
   title: string;
   content: string;
@@ -19,5 +19,20 @@ export interface UpdateArticleInput {
   title?: string;
   content?: string;
   photoUrl?: string | null;
+}
+
+export interface GetArticlesByDatesParams {
+  from: Date;
+  to: Date;
+  page?: number;
+  pageSize?: number;
+  sortDirection?: ArticleSortDirection;
+
+}
+
+export interface ListArticlesParams {
+  page?: number;
+  pageSize?: number;
+  sortDirection?: ArticleSortDirection;
 }
  

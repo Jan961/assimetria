@@ -1,5 +1,8 @@
-
-  
+  import {Article} from '../models/article';
+  import { ListArticlesParams, GetArticlesByDatesParams } from '../models/article';
+  import { CreateArticleInput } from '../models/article';
+  import { UpdateArticleInput } from '../models/article';
+  import { PaginatedArticlesResult } from '../repositories/articlesRepository';
   /**
    * Repository contract used by the service.
    * Implement this with your ORM / DB client.
@@ -21,7 +24,7 @@
    * Service contract used by the controller.
    */
   export interface ArticleService {
-    listArticles(params: ListArticlesParams): Promise<PaginatedResult<Article>>;
+    listArticles(params: ListArticlesParams): Promise<PaginatedArticlesResult>;
     getArticleById(id: string): Promise<Article | null>;
     createArticle(payload: CreateArticleInput): Promise<Article>;
     updateArticle(
@@ -31,7 +34,7 @@
     deleteArticle(id: string): Promise<boolean>;
     getArticlesByDates(
       params: GetArticlesByDatesParams,
-    ): Promise<PaginatedResult<Article>>;
+    ): Promise<PaginatedArticlesResult>;
   }
   
   /**
@@ -44,15 +47,8 @@
   
     async listArticles(
       params: ListArticlesParams,
-    ): Promise<PaginatedResult<Article>> {
-      const { limit, offset } = params;
-  
-      const [items, total] = await Promise.all([
-        this.articleRepository.findMany({ limit, offset }),
-        this.articleRepository.countAll(),
-      ]);
-  
-      return { items, total, limit, offset };
+    ): Promise<PaginatedArticlesResult> {
+      return this.articleRepository.lis
     }
   
     async getArticleById(id: string): Promise<Article | null> {
@@ -80,7 +76,7 @@
      */
     async getArticlesByDates(
       params: GetArticlesByDatesParams,
-    ): Promise<PaginatedResult<Article>> {
+    ): Promise<PaginatedArticlesResult<Article>> {
       const { from, to, limit, offset } = params;
   
       const [items, total] = await Promise.all([
