@@ -39,6 +39,9 @@ export const createArticleRouter = (
   // GET /articles
   router.get('/', asyncHandler(articleController.list));
 
+  // GET /articles/search?from=YYYY-MM-DD&to=YYYY-MM-DD
+  router.get('/search', asyncHandler(articleController.getByDates));
+
   // GET /articles/:id
   router.get('/:id', asyncHandler(articleController.getById));
 
