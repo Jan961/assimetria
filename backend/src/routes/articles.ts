@@ -1,9 +1,14 @@
 // src/routes/articles.routes.ts
 import { Router, type RequestHandler } from 'express';
-import { asyncHandler } from '../middleware/asyncHandler';
-import { validateBody } from '../middleware/articlesValidation';
+import { asyncHandler, type AsyncHandler } from '../middleware/asyncHandler';
+import { validateBody, validateParams, validateQuery } from '../middleware/articlesValidation';
 import {
   createArticleSchema,
+  deleteArticleParamsSchema,
+  getArticleByIdParamsSchema,
+  getArticlesByDatesQuerySchema,
+  listArticlesQuerySchema,
+  updateArticleParamsSchema,
   updateArticleSchema,
 } from '../validation/articleSchemas';
 
@@ -12,12 +17,12 @@ import {
  * All handlers are standard Express RequestHandlers.
  */
 export interface ArticleController {
-  list: RequestHandler;
-  getById: RequestHandler;
-  getByDates: RequestHandler;
-  create: RequestHandler;
-  update: RequestHandler;
-  delete: RequestHandler;
+  list: AsyncHandler;
+  getById: AsyncHandler;
+  getByDates: AsyncHandler;
+  create: AsyncHandler;
+  update: AsyncHandler;
+  delete: AsyncHandler;
 }
 
 export interface CreateArticleRouterDeps {
@@ -37,13 +42,13 @@ export const createArticleRouter = (
   const router = Router();
 
   // GET /articles
-  router.get('/', 
+  router.get('/',
     validateQuery(listArticlesQuerySchema),
     asyncHandler(articleController.list),
   );
 
   // GET /articles/search?from=YYYY-MM-DD&to=YYYY-MM-DD
-  router.get('/search', 
+  router.get('/search',
     validateQuery(getArticlesByDatesQuerySchema),
     asyncHandler(articleController.getByDates),
   );
