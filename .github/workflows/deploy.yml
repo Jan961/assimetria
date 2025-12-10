@@ -40,7 +40,7 @@ jobs:
           echo "Waiting for CodeBuild build $BUILD_ID to complete..."
 
           while true; do
-            STATUS=$(${aws} codebuild batch-get-builds \
+            STATUS=$(aws codebuild batch-get-builds \
               --ids "$BUILD_ID" \
               --query "builds[0].buildStatus" \
               --output text)
