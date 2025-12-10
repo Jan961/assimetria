@@ -48,7 +48,7 @@ echo "Logging into ECR..."
 aws ecr get-login-password --region "$AWS_REGION" | \
   docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
-cd /opt/blog
+cd /infra
 
 echo "Pulling latest images..."
 docker compose -f docker-compose.prod.yml pull
